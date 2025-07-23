@@ -1,9 +1,9 @@
-import './App.css'
+import DatePicker from './components/DatePicker';
+
+import './App.css';
 
 function App() {
-  return (
-    <div>App</div>
-  )
+  return <DatePicker />;
 }
 
-export default App
+export default App;
