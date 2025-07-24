@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import type { DatePickerProps } from '../types';
-import { getInputValueFromDate, isValidDateString } from './utils';
+import { getDateFromInputValue, getInputValueFromDate } from './utils';
 import DatePickerPopupContent from './DatePickerPopupContent';
 
 export const DatePicker = ({ value, onChange }: DatePickerProps) => {
@@ -9,7 +9,7 @@ export const DatePicker = ({ value, onChange }: DatePickerProps) => {
   const [showPopup, setShowPopup] = useState(false);
   const elementRef = useRef<HTMLDivElement>(null);
 
-  const onFocus = () => {
+  const onInputClick = () => {
     setShowPopup(true);
   };
 
@@ -18,35 +18,20 @@ export const DatePicker = ({ value, onChange }: DatePickerProps) => {
     setInputValue(value);
   };
 
+  const handleChange = (value: Date) => {
+    onChange(value);
+    setShowPopup(false);
+  };
+
   const updateValueFromInputValue = () => {
-    if (!isValidDateString(inputValue)) {
-      return;
-    }
-
-    const [date, month, year] = inputValue
-      .split('-')
-      .map((v) => parseInt(v, 10));
-
-    const dateObj = new Date(year, month - 1, date);
-    onChange(dateObj);
+    const date = getDateFromInputValue(inputValue);
+    if (!date) return;
+    handleChange(date);
   };
 
   const inputValueDate = useMemo(() => {
-    if (!isValidDateString(inputValue)) {
-      return;
-    }
-
-    const [date, month, year] = inputValue
-      .split('-')
-      .map((v) => parseInt(v, 10));
-
-    const dateObj = new Date(year, month - 1, date);
-    return new Date(dateObj);
+    return getDateFromInputValue(inputValue);
   }, [inputValue]);
-
-  const onBlur = () => {
-    updateValueFromInputValue();
-  };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key !== 'Enter') return;
@@ -74,6 +59,7 @@ export const DatePicker = ({ value, onChange }: DatePickerProps) => {
         return;
       }
 
+      updateValueFromInputValue();
       setShowPopup(false);
     };
 
@@ -87,17 +73,16 @@ export const DatePicker = ({ value, onChange }: DatePickerProps) => {
     >
       <input
         type="text"
-        onFocus={onFocus}
+        onClick={onInputClick}
         value={inputValue}
         onChange={onInputValueChange}
-        onBlur={onBlur}
         onKeyDown={onKeyDown}
       />
       {showPopup && (
         <div style={{ position: 'absolute', top: '100%', left: 0 }}>
           <DatePickerPopupContent
             selectedValue={value}
-            onChange={onChange}
+            onChange={handleChange}
             inputValueDate={inputValueDate}
           />
         </div>

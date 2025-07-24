@@ -97,15 +97,31 @@ export const getCurrentMonthDays = (
   return dateCells;
 };
 
+const formatWithZero = (value: number) => {
+  if (value > 9) return value.toString();
+  return `0${value}`;
+};
+
 export const getInputValueFromDate = (value: Date) => {
   const dateValue = value.getDate();
   const monthValue = value.getMonth() + 1;
 
-  const date = dateValue > 9 ? dateValue : `0${dateValue}`;
-  const month = monthValue > 9 ? monthValue : `0${monthValue}`;
+  const date = formatWithZero(dateValue);
+  const month = formatWithZero(monthValue);
 
   const year = value.getFullYear();
   return `${date}-${month}-${year}`;
+};
+
+export const getDateFromInputValue = (value: string) => {
+  if (!isValidDateString(value)) {
+    return;
+  }
+
+  const [date, month, year] = value.split('-').map((v) => parseInt(v, 10));
+
+  const dateObj = new Date(year, month - 1, date);
+  return dateObj;
 };
 
 const validValueRegex = /^\d{2}-\d{2}-\d{4}$/;
