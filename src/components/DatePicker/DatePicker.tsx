@@ -1,36 +1,61 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import type { DatePickerProps } from '../types';
-import DatePickerPopup from './DatePickerPopup';
-
-const getInputValueFromDate = (value: Date) => {
-  const date = value.getDate();
-  const monthValue = value.getMonth();
-  const month = monthValue > 9 ? monthValue : `0${monthValue}`;
-  const year = value.getFullYear();
-  return `${date}-${month}-${year}`;
-};
+import { getInputValueFromDate, isValidDateString } from './utils';
+import DatePickerPopupContent from './DatePickerPopupContent';
 
 export const DatePicker = ({ value, onChange }: DatePickerProps) => {
   const [inputValue, setInputValue] = useState('');
   const [showPopup, setShowPopup] = useState(false);
   const elementRef = useRef<HTMLDivElement>(null);
 
-  // TODO: syncing external value state
-  useLayoutEffect(() => {
-    setInputValue(getInputValueFromDate(value));
-  }, [value]);
-
   const onFocus = () => {
     setShowPopup(true);
   };
 
   const onInputValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+    const value = e.target.value.trim();
     setInputValue(value);
-
-    // TO DO: add input validation
   };
+
+  const updateValueFromInputValue = () => {
+    if (!isValidDateString(inputValue)) {
+      return;
+    }
+
+    const [date, month, year] = inputValue
+      .split('-')
+      .map((v) => parseInt(v, 10));
+
+    const dateObj = new Date(year, month - 1, date);
+    onChange(dateObj);
+  };
+
+  const inputValueDate = useMemo(() => {
+    if (!isValidDateString(inputValue)) {
+      return;
+    }
+
+    const [date, month, year] = inputValue
+      .split('-')
+      .map((v) => parseInt(v, 10));
+
+    const dateObj = new Date(year, month - 1, date);
+    return new Date(dateObj);
+  }, [inputValue]);
+
+  const onBlur = () => {
+    updateValueFromInputValue();
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== 'Enter') return;
+    updateValueFromInputValue();
+  };
+
+  useLayoutEffect(() => {
+    setInputValue(getInputValueFromDate(value));
+  }, [value]);
 
   // handling outside click
   useEffect(() => {
@@ -65,10 +90,16 @@ export const DatePicker = ({ value, onChange }: DatePickerProps) => {
         onFocus={onFocus}
         value={inputValue}
         onChange={onInputValueChange}
+        onBlur={onBlur}
+        onKeyDown={onKeyDown}
       />
       {showPopup && (
         <div style={{ position: 'absolute', top: '100%', left: 0 }}>
-          <DatePickerPopup value={value} onChange={onChange} />
+          <DatePickerPopupContent
+            selectedValue={value}
+            onChange={onChange}
+            inputValueDate={inputValueDate}
+          />
         </div>
       )}
     </div>

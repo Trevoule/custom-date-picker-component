@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useLayoutEffect, useMemo, useState } from 'react';
 
 import { MONTHS, WEEKDAYS } from '../../constants/common';
-import type { DateCellItem, DatePickerProps } from '../types';
+import type { DateCellItem, DatePickerPopupContentProps } from '../types';
 import {
   getCurrentMonthDays,
   getDaysAmountInAMonth,
@@ -9,19 +9,28 @@ import {
   getPreviousMonthDays,
 } from './utils';
 
-const DatePickerPopup = ({ value, onChange }: DatePickerProps) => {
+const DatePickerPopupContent = ({
+  selectedValue,
+  inputValueDate,
+  onChange,
+}: DatePickerPopupContentProps) => {
   const [year, month, day] = useMemo(() => {
-    const currentYear = value.getFullYear();
-    const currentMonth = value.getMonth();
-
-    const currentDate = value.getDate();
+    const currentYear = selectedValue.getFullYear();
+    const currentMonth = selectedValue.getMonth();
+    const currentDate = selectedValue.getDate();
 
     return [currentYear, currentMonth, currentDate];
-  }, [value]);
+  }, [selectedValue]);
 
-  // DATEPICKER PANEL
-  const [panelYear, setPanelYear] = useState(() => value.getFullYear());
-  const [panelMonth, setPanelMonth] = useState(() => value.getMonth());
+  const [panelYear, setPanelYear] = useState(() => selectedValue.getFullYear());
+  const [panelMonth, setPanelMonth] = useState(() => selectedValue.getMonth());
+
+  useLayoutEffect(() => {
+    if (!inputValueDate) return;
+
+    setPanelMonth(inputValueDate.getMonth());
+    setPanelYear(inputValueDate.getFullYear());
+  }, [inputValueDate]);
 
   const dateCells = useMemo(() => {
     const daysInMonth = getDaysAmountInAMonth(panelYear, panelMonth);
@@ -79,7 +88,6 @@ const DatePickerPopup = ({ value, onChange }: DatePickerProps) => {
 
   return (
     <div style={{ padding: 12 }}>
-      {/* TO BE REMOVED */}
       <div>
         {MONTHS[panelMonth]} {panelYear}
       </div>
@@ -114,4 +122,4 @@ const DatePickerPopup = ({ value, onChange }: DatePickerProps) => {
   );
 };
 
-export default DatePickerPopup;
+export default DatePickerPopupContent;

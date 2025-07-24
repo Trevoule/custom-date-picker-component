@@ -5,6 +5,14 @@ export type DatePickerProps = {
   max?: Date;
 };
 
+export type DatePickerPopupContentProps = {
+  selectedValue: Date;
+  inputValueDate?: Date;
+  onChange: (value: Date) => void;
+  min?: Date;
+  max?: Date;
+};
+
 export type DateCellItem = {
   date: number;
   month: number;

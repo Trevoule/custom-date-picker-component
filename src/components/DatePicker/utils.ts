@@ -96,3 +96,34 @@ export const getCurrentMonthDays = (
 
   return dateCells;
 };
+
+export const getInputValueFromDate = (value: Date) => {
+  const dateValue = value.getDate();
+  const monthValue = value.getMonth() + 1;
+
+  const date = dateValue > 9 ? dateValue : `0${dateValue}`;
+  const month = monthValue > 9 ? monthValue : `0${monthValue}`;
+
+  const year = value.getFullYear();
+  return `${date}-${month}-${year}`;
+};
+
+const validValueRegex = /^\d{2}-\d{2}-\d{4}$/;
+
+export const isValidDateString = (value: string) => {
+  if (!validValueRegex.test(value)) {
+    return false;
+  }
+
+  const [date, month, year] = value.split('-').map((v) => parseInt(v, 10));
+
+  if (month < 1 || month > 12) {
+    return false;
+  }
+
+  const maxDaysInAMonth = getDaysAmountInAMonth(year, month - 1);
+
+  if (date > maxDaysInAMonth) return false;
+
+  return true;
+};
