@@ -10,7 +10,7 @@ function App() {
 
   return (
     <div>
-      <DatePicker value={date} onChange={setDate} />;
+      <DatePicker value={date} onChange={setDate} />
     </div>
   );
 }
