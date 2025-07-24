@@ -1,115 +1,76 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-import { MONTHS, WEEKDAYS } from '../../constants/common';
-import type { DateCellItem, DatePickerProps } from '../types';
-import {
-  getCurrentMonthDays,
-  getDaysAmountInAMonth,
-  getNextMonthDays,
-  getPreviousMonthDays,
-} from './utils';
+import type { DatePickerProps } from '../types';
+import DatePickerPopup from './DatePickerPopup';
 
-const DatePicker = ({ value, onChange }: DatePickerProps) => {
-  const [year, month, day] = useMemo(() => {
-    const currentYear = value.getFullYear();
-    const currentMonth = value.getMonth();
+const getInputValueFromDate = (value: Date) => {
+  const date = value.getDate();
+  const monthValue = value.getMonth();
+  const month = monthValue > 9 ? monthValue : `0${monthValue}`;
+  const year = value.getFullYear();
+  return `${date}-${month}-${year}`;
+};
 
-    const currentDate = value.getDate();
+export const DatePicker = ({ value, onChange }: DatePickerProps) => {
+  const [inputValue, setInputValue] = useState('');
+  const [showPopup, setShowPopup] = useState(false);
+  const elementRef = useRef<HTMLDivElement>(null);
 
-    return [currentYear, currentMonth, currentDate];
+  // TODO: syncing external value state
+  useLayoutEffect(() => {
+    setInputValue(getInputValueFromDate(value));
   }, [value]);
 
-  // DATEPICKER PANEL
-  const [panelYear, setPanelYear] = useState(() => value.getFullYear());
-  const [panelMonth, setPanelMonth] = useState(() => value.getMonth());
-
-  const dateCells = useMemo(() => {
-    const daysInMonth = getDaysAmountInAMonth(panelYear, panelMonth);
-
-    const currentMonthDays = getCurrentMonthDays(
-      panelYear,
-      panelMonth,
-      daysInMonth
-    );
-
-    const prevMonthDays = getPreviousMonthDays(panelYear, panelMonth);
-    const nextMonthDays = getNextMonthDays(panelYear, panelMonth);
-
-    return [...prevMonthDays, ...currentMonthDays, ...nextMonthDays];
-  }, [panelYear, panelMonth]);
-
-  const onDateSelect = (dateItem: DateCellItem) => {
-    const date = new Date(dateItem.year, dateItem.month, dateItem.date);
-    onChange(date);
+  const onFocus = () => {
+    setShowPopup(true);
   };
 
-  const prevYearHandler = () => {
-    const year = panelYear;
-    const prevYear = year - 1;
-    setPanelYear(prevYear);
-  };
-  const prevMonthHandler = () => {
-    const month = panelMonth;
-    const year = panelYear;
+  const onInputValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInputValue(value);
 
-    const [prevMonth, prevYear] =
-      month === 0 ? [11, year - 1] : [month - 1, year];
-
-    setPanelYear(prevYear);
-    setPanelMonth(prevMonth);
+    // TO DO: add input validation
   };
 
-  const nextMonthHandler = () => {
-    const month = panelMonth;
-    const year = panelYear;
+  // handling outside click
+  useEffect(() => {
+    const element = elementRef.current;
 
-    const [nextMonth, nextYear] =
-      month === 0 ? [0, year + 1] : [month + 1, year];
+    if (!element) return;
 
-    setPanelYear(nextYear);
-    setPanelMonth(nextMonth);
-  };
+    const onDocumentClick = (e: MouseEvent) => {
+      const target = e.target;
 
-  const nextYearHandler = () => {
-    const year = panelYear;
-    const nextYear = year + 1;
+      if (!(target instanceof Node)) {
+        return;
+      }
 
-    setPanelYear(nextYear);
-  };
+      if (element.contains(target)) {
+        return;
+      }
+
+      setShowPopup(false);
+    };
+
+    document.addEventListener('click', onDocumentClick);
+  }, []);
 
   return (
-    <div style={{ padding: 12 }}>
-      {/* TO BE REMOVED */}
-      <div>
-        {MONTHS[panelMonth]} {panelYear}
-      </div>
-      <div style={{ display: 'flex', margin: '12px 0', gap: 8 }}>
-        <button onClick={prevYearHandler}>Prev Year</button>
-        <button onClick={prevMonthHandler}>Prev Month</button>
-        <button onClick={nextMonthHandler}>Next Month</button>
-        <button onClick={nextYearHandler}>Next Year</button>
-      </div>
-      <div className="CalendarPanel">
-        {WEEKDAYS.map((weekday) => (
-          <div key={weekday} className="CalendarPanelItem">
-            {weekday}
-          </div>
-        ))}
-        {dateCells.map((cell) => {
-          const isCurrentDate =
-            cell.year === year && cell.month === month && cell.date === day;
-
-          return (
-            <div
-              key={`${cell.date}-${cell.month}-${cell.year}`}
-              className={`CalendarPanelItem ${isCurrentDate ? 'CalendarPanelItem--current' : ''}`}
-              onClick={() => onDateSelect(cell)}
-            >
-              {cell.date}
-            </div>
-          );
-        })}
-      </div>
+    <div
+      ref={elementRef}
+      style={{ position: 'relative', display: 'inline-block' }}
+    >
+      <input
+        type="text"
+        onFocus={onFocus}
+        value={inputValue}
+        onChange={onInputValueChange}
+      />
+      {showPopup && (
+        <div style={{ position: 'absolute', top: '100%', left: 0 }}>
+          <DatePickerPopup value={value} onChange={onChange} />
+        </div>
+      )}
     </div>
   );
 };
