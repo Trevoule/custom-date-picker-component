@@ -6,7 +6,13 @@ import './App.css';
 function App() {
   const [date, setDate] = useState(() => new Date());
 
-  return <DatePicker value={date} onChange={setDate} />;
+  console.log(date);
+
+  return (
+    <div>
+      <DatePicker value={date} onChange={setDate} />;
+    </div>
+  );
 }
 
 export default App;

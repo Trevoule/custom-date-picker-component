@@ -1,24 +1,13 @@
 import { useMemo, useState } from 'react';
 
+import { WEEKDAYS } from '../../constants/common';
+
 type DatePickerProps = {
   value: Date;
   onChange: (value: Date) => void;
   min?: Date;
   max?: Date;
 };
-
-const MONTHS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Nov',
-  'Dec',
-];
 
 type DateCellItem = {
   date: number;
@@ -118,18 +107,19 @@ const getCurrentMonthDays = (
   return dateCells;
 };
 
-const DatePicker = ({ value }: DatePickerProps) => {
+const DatePicker = ({ value, onChange }: DatePickerProps) => {
   const [year, month, day] = useMemo(() => {
     const currentYear = value.getFullYear();
-    const currentMonth = MONTHS[value.getMonth()];
+    const currentMonth = value.getMonth();
+
     const currentDate = value.getDate();
 
     return [currentYear, currentMonth, currentDate];
   }, [value]);
 
   // DATEPICKER PANEL
-  const [panelYear] = useState(() => value.getFullYear());
-  const [panelMonth] = useState(() => value.getMonth());
+  const [panelYear, setPanelYear] = useState(() => value.getFullYear());
+  const [panelMonth, setPanelMonth] = useState(() => value.getMonth());
 
   const dateCells = useMemo(() => {
     const daysInMonth = getDaysAmountInAMonth(panelYear, panelMonth);
@@ -146,23 +136,73 @@ const DatePicker = ({ value }: DatePickerProps) => {
     return [...prevMonthDays, ...currentMonthDays, ...nextMonthDays];
   }, [panelYear, panelMonth]);
 
-  // TODO: DATEPICKER NAVIGATION
-  // const nextYear = () => {};
-  // const prevYear = () => {};
-  // const nextMonth = () => {};
-  // const prevMonth = () => {};
+  const onDateSelect = (dateItem: DateCellItem) => {
+    const date = new Date(dateItem.year, dateItem.month, dateItem.date);
+    onChange(date);
+  };
+
+  const prevYearHandler = () => {
+    const year = value.getFullYear();
+    const prevYear = year - 1;
+    setPanelYear(prevYear);
+  };
+  const prevMonthHandler = () => {
+    const month = value.getMonth();
+    const year = value.getFullYear();
+
+    const [prevMonth, prevYear] =
+      month === 0 ? [11, year - 1] : [month - 1, year];
+
+    setPanelYear(prevYear);
+    setPanelMonth(prevMonth);
+  };
+
+  const nextMonthHandler = () => {
+    const month = value.getMonth();
+    const year = value.getFullYear();
+
+    const [nextMonth, nextYear] =
+      month === 0 ? [0, year + 1] : [month + 1, year];
+
+    setPanelYear(nextYear);
+    setPanelMonth(nextMonth);
+  };
+
+  const nextYearHandler = () => {
+    const year = value.getFullYear();
+    const nextYear = year + 1;
+
+    setPanelYear(nextYear);
+  };
 
   return (
-    <div>
-      Date:
-      <div>
-        {year} {month} {day}
+    <div style={{ padding: 12 }}>
+      <div style={{ display: 'flex', margin: '12px 0', gap: 8 }}>
+        <button onClick={prevYearHandler}>Prev Year</button>
+        <button onClick={prevMonthHandler}>Prev Month</button>
+        <button onClick={nextMonthHandler}>Next Month</button>
+        <button onClick={nextYearHandler}>Next Year</button>
       </div>
-      <div>
-        {dateCells.map((cell) => (
-          <div>{cell.date}</div>
+      <div className="CalendarPanel">
+        {WEEKDAYS.map((weekday) => (
+          <div key={weekday} className="CalendarPanelItem">
+            {weekday}
+          </div>
         ))}
-        <div></div>
+        {dateCells.map((cell) => {
+          const isCurrentDate =
+            cell.year === year && cell.month === month && cell.date === day;
+
+          return (
+            <div
+              key={`${cell.date}-${cell.month}-${cell.year}`}
+              className={`CalendarPanelItem ${isCurrentDate ? 'CalendarPanelItem--current' : ''}`}
+              onClick={() => onDateSelect(cell)}
+            >
+              {cell.date}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
