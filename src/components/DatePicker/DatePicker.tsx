@@ -1,4 +1,11 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import type { DatePickerProps } from '../types';
 import { getDateFromInputValue, getInputValueFromDate } from './utils';
@@ -11,6 +18,7 @@ export const DatePicker = ({ value, onChange }: DatePickerProps) => {
   const elementRef = useRef<HTMLDivElement>(null);
 
   const latestInputValue = useLatest(inputValue);
+  const latestValue = useLatest(value);
 
   const onInputClick = () => {
     setShowPopup(true);
@@ -21,16 +29,27 @@ export const DatePicker = ({ value, onChange }: DatePickerProps) => {
     setInputValue(value);
   };
 
-  const handleChange = (value: Date) => {
-    onChange(value);
-    setShowPopup(false);
-  };
+  const handleChange = useCallback(
+    (value: Date) => {
+      onChange(value);
+      setShowPopup(false);
+    },
+    [onChange]
+  );
 
-  const updateValueFromInputValue = () => {
-    const date = getDateFromInputValue(inputValue);
-    if (!date) return;
-    handleChange(date);
-  };
+  const updateWithValidDate = useCallback(
+    (inputValue: string, latestValidDate: Date) => {
+      const validDate = getDateFromInputValue(inputValue);
+
+      if (validDate) {
+        handleChange(validDate);
+      } else {
+        setInputValue(getInputValueFromDate(latestValidDate));
+      }
+      setShowPopup(false);
+    },
+    [handleChange]
+  );
 
   const inputValueDate = useMemo(() => {
     return getDateFromInputValue(inputValue);
@@ -38,7 +57,7 @@ export const DatePicker = ({ value, onChange }: DatePickerProps) => {
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key !== 'Enter') return;
-    updateValueFromInputValue();
+    updateWithValidDate(inputValue, value);
   };
 
   useLayoutEffect(() => {
@@ -62,14 +81,8 @@ export const DatePicker = ({ value, onChange }: DatePickerProps) => {
         return;
       }
 
-      const dateFromInputValue = getDateFromInputValue(
-        latestInputValue.current
-      );
-
-      if (dateFromInputValue) {
-        onChange(dateFromInputValue);
-      }
-      setShowPopup(false);
+      // using latest value ref instead of value to not recreate the event listener on every value change
+      updateWithValidDate(latestInputValue.current, latestValue.current);
     };
 
     document.addEventListener('click', onDocumentClick);
@@ -77,7 +90,8 @@ export const DatePicker = ({ value, onChange }: DatePickerProps) => {
     return () => {
       document.removeEventListener('click', onDocumentClick);
     };
-  }, [latestInputValue, onChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [updateWithValidDate]);
 
   return (
     <div
