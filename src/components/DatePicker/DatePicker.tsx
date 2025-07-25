@@ -6,13 +6,18 @@ import {
   useRef,
   useState,
 } from 'react';
+import clsx from 'clsx';
 
 import type { DatePickerProps } from '../types';
-import { getDateFromInputValue, getInputValueFromDate } from './utils';
+import {
+  getDateFromInputValue,
+  getInputValueFromDate,
+  isInRange,
+} from './utils';
 import DatePickerPopupContent from './DatePickerPopupContent';
 import { useLatest } from '../../hooks/useLatest';
 
-export const DatePicker = ({ value, onChange }: DatePickerProps) => {
+export const DatePicker = ({ value, onChange, min, max }: DatePickerProps) => {
   const [inputValue, setInputValue] = useState('');
   const [showPopup, setShowPopup] = useState(false);
   const elementRef = useRef<HTMLDivElement>(null);
@@ -40,20 +45,29 @@ export const DatePicker = ({ value, onChange }: DatePickerProps) => {
   const updateWithValidDate = useCallback(
     (inputValue: string, latestValidDate: Date) => {
       const validDate = getDateFromInputValue(inputValue);
+      const isDateInRange = validDate && isInRange(validDate, min, max);
 
-      if (validDate) {
+      if (isDateInRange) {
         handleChange(validDate);
       } else {
         setInputValue(getInputValueFromDate(latestValidDate));
       }
       setShowPopup(false);
     },
-    [handleChange]
+    [min, max, handleChange]
   );
 
-  const inputValueDate = useMemo(() => {
-    return getDateFromInputValue(inputValue);
-  }, [inputValue]);
+  const [inputValueDate, isValidInputValue] = useMemo(() => {
+    const date = getDateFromInputValue(inputValue);
+
+    if (!date) {
+      return [undefined, false];
+    }
+
+    const isDateInRange = isInRange(date, min, max);
+
+    return [date, isDateInRange];
+  }, [max, min, inputValue]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key !== 'Enter') return;
@@ -104,13 +118,19 @@ export const DatePicker = ({ value, onChange }: DatePickerProps) => {
         value={inputValue}
         onChange={onInputValueChange}
         onKeyDown={onKeyDown}
+        className={clsx(!isValidInputValue && 'invalid')}
       />
+      {!isValidInputValue && (
+        <p className={clsx(!isValidInputValue && 'invalid')}>*Invalid input</p>
+      )}
       {showPopup && (
         <div style={{ position: 'absolute', top: '100%', left: 0 }}>
           <DatePickerPopupContent
             selectedValue={value}
             onChange={handleChange}
             inputValueDate={inputValueDate}
+            min={min}
+            max={max}
           />
         </div>
       )}

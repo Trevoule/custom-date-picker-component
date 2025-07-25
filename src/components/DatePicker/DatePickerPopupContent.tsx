@@ -8,6 +8,7 @@ import {
   getDaysAmountInAMonth,
   getNextMonthDays,
   getPreviousMonthDays,
+  isInRange,
   isToday,
 } from './utils';
 
@@ -15,6 +16,8 @@ const DatePickerPopupContent = ({
   selectedValue,
   inputValueDate,
   onChange,
+  min,
+  max,
 }: DatePickerPopupContentProps) => {
   const [year, month, day] = useMemo(() => {
     const currentYear = selectedValue.getFullYear();
@@ -113,16 +116,20 @@ const DatePickerPopupContent = ({
           const isTodayDate = isToday(todayDate, cell);
           const isNotCurrent = cell.type !== 'current';
 
+          const date = new Date(cell.year, cell.month, cell.date);
+          const isDateNotInRange = !isInRange(date, min, max);
+
           return (
             <div
               key={`${cell.date}-${cell.month}-${cell.year}`}
               className={clsx(
                 'CalendarPanelItem',
-                isSelectedDate && 'CalendarPanelItem--isSelectedDate',
-                isTodayDate && 'CalendarPanelItem--today',
-                isNotCurrent && 'CalendarPanelItem--not-current'
+                isSelectedDate && 'CalendarPanelItem--selected',
+                !isDateNotInRange && isTodayDate && 'CalendarPanelItem--today',
+                isNotCurrent && 'CalendarPanelItem--not-current',
+                isDateNotInRange && 'CalendarPanelItem--not-in-range'
               )}
-              onClick={() => onDateSelect(cell)}
+              onClick={() => !isDateNotInRange && onDateSelect(cell)}
             >
               <div className="CalendarPanelItem__date">{cell.date}</div>
             </div>

@@ -154,3 +154,63 @@ export const isToday = (todayDate: Date, dateCell: DateCellItem) => {
     dateCell.date === todayDate.getDate()
   );
 };
+
+export function isInRange(date: Date, min?: Date, max?: Date) {
+  if (min && max) {
+    return isSmallerThanDate(date, max) && isBiggerThanDate(date, min);
+  }
+
+  if (min) {
+    return isBiggerThanDate(date, min);
+  }
+
+  if (max) {
+    return isSmallerThanDate(date, max);
+  }
+
+  return true;
+}
+
+export function isBiggerThanDate(date: Date, checkDate: Date) {
+  if (date.getFullYear() < checkDate.getFullYear()) {
+    return false;
+  }
+
+  if (date.getMonth() <= checkDate.getMonth()) {
+    return false;
+  }
+
+  if (date.getDate() < checkDate.getDate()) {
+    return false;
+  }
+
+  return true;
+}
+
+export function isSmallerThanDate(date: Date, checkDate: Date) {
+  if (date.getFullYear() > checkDate.getFullYear()) {
+    return false;
+  }
+
+  if (date.getFullYear() < checkDate.getFullYear()) {
+    return true;
+  }
+
+  if (date.getMonth() > checkDate.getMonth()) {
+    return false;
+  }
+
+  if (date.getMonth() < checkDate.getMonth()) {
+    return true;
+  }
+
+  return date.getDate() <= checkDate.getDate();
+}
+
+export function formatDateNumeric(date: Date) {
+  return date.toLocaleDateString('en-GB', {
+    year: 'numeric',
+    month: '2-digit',
+    day: 'numeric',
+  });
+}
