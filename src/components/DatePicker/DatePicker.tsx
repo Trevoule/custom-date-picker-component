@@ -108,23 +108,24 @@ export const DatePicker = ({ value, onChange, min, max }: DatePickerProps) => {
   }, [updateWithValidDate]);
 
   return (
-    <div
-      ref={elementRef}
-      style={{ position: 'relative', display: 'inline-block' }}
-    >
-      <input
-        type="text"
-        onClick={onInputClick}
-        value={inputValue}
-        onChange={onInputValueChange}
-        onKeyDown={onKeyDown}
-        className={clsx(!isValidInputValue && 'invalid')}
-      />
+    <div ref={elementRef} className="DatePicker">
+      <div className="DatePicker--control">
+        <label htmlFor="date"></label>
+        <input
+          id="date"
+          type="text"
+          onClick={onInputClick}
+          value={inputValue}
+          onChange={onInputValueChange}
+          onKeyDown={onKeyDown}
+          className={clsx(!isValidInputValue && 'invalid')}
+        />
+      </div>
       {!isValidInputValue && (
         <p className={clsx(!isValidInputValue && 'invalid')}>*Invalid input</p>
       )}
       {showPopup && (
-        <div style={{ position: 'absolute', top: '100%', left: 0 }}>
+        <div className="CalendarPanel--modal">
           <DatePickerPopupContent
             selectedValue={value}
             onChange={handleChange}

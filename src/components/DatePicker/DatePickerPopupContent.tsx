@@ -93,17 +93,19 @@ const DatePickerPopupContent = ({
   };
 
   return (
-    <div style={{ padding: 12 }}>
-      <div>
-        {MONTHS[panelMonth]} {panelYear}
-      </div>
-      <div style={{ display: 'flex', margin: '12px 0', gap: 8 }}>
+    <div className="CalendarPanel--container">
+      <div className="CalendarPanel--controls">
         <button onClick={prevYearHandler}>Prev Year</button>
         <button onClick={prevMonthHandler}>Prev Month</button>
+
+        <div>
+          {MONTHS[panelMonth]} {panelYear}
+        </div>
+
         <button onClick={nextMonthHandler}>Next Month</button>
         <button onClick={nextYearHandler}>Next Year</button>
       </div>
-      <div className="CalendarPanel">
+      <div className="CalendarPanel--content">
         {WEEKDAYS.map((weekday) => (
           <div key={weekday} className="CalendarPanelItem">
             {weekday}
