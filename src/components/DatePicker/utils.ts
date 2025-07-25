@@ -47,6 +47,7 @@ export const getPreviousMonthDays = (year: number, month: number) => {
       year: prevYear,
       month: prevMonth,
       date: daysAmountInPrevMonth - i,
+      type: 'prev',
     });
   }
 
@@ -73,6 +74,7 @@ export const getNextMonthDays = (year: number, month: number) => {
       year: nextYear,
       month: nextMonth,
       date: i,
+      type: 'next',
     });
   }
 
@@ -91,6 +93,7 @@ export const getCurrentMonthDays = (
       year,
       month,
       date: i,
+      type: 'current',
     });
   }
 
@@ -142,4 +145,12 @@ export const isValidDateString = (value: string) => {
   if (date > maxDaysInAMonth) return false;
 
   return true;
+};
+
+export const isToday = (todayDate: Date, dateCell: DateCellItem) => {
+  return (
+    dateCell.year === todayDate.getFullYear() &&
+    dateCell.month === todayDate.getMonth() &&
+    dateCell.date === todayDate.getDate()
+  );
 };

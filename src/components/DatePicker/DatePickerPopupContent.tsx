@@ -1,4 +1,5 @@
 import { useLayoutEffect, useMemo, useState } from 'react';
+import clsx from 'clsx';
 
 import { MONTHS, WEEKDAYS } from '../../constants/common';
 import type { DateCellItem, DatePickerPopupContentProps } from '../types';
@@ -7,6 +8,7 @@ import {
   getDaysAmountInAMonth,
   getNextMonthDays,
   getPreviousMonthDays,
+  isToday,
 } from './utils';
 
 const DatePickerPopupContent = ({
@@ -24,6 +26,7 @@ const DatePickerPopupContent = ({
 
   const [panelYear, setPanelYear] = useState(() => selectedValue.getFullYear());
   const [panelMonth, setPanelMonth] = useState(() => selectedValue.getMonth());
+  const todayDate = useMemo(() => new Date(), []);
 
   useLayoutEffect(() => {
     if (!inputValueDate) return;
@@ -104,16 +107,24 @@ const DatePickerPopupContent = ({
           </div>
         ))}
         {dateCells.map((cell) => {
-          const isCurrentDate =
+          const isSelectedDate =
             cell.year === year && cell.month === month && cell.date === day;
+
+          const isTodayDate = isToday(todayDate, cell);
+          const isNotCurrent = cell.type !== 'current';
 
           return (
             <div
               key={`${cell.date}-${cell.month}-${cell.year}`}
-              className={`CalendarPanelItem ${isCurrentDate ? 'CalendarPanelItem--current' : ''}`}
+              className={clsx(
+                'CalendarPanelItem',
+                isSelectedDate && 'CalendarPanelItem--isSelectedDate',
+                isTodayDate && 'CalendarPanelItem--today',
+                isNotCurrent && 'CalendarPanelItem--not-current'
+              )}
               onClick={() => onDateSelect(cell)}
             >
-              {cell.date}
+              <div className="CalendarPanelItem__date">{cell.date}</div>
             </div>
           );
         })}

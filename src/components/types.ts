@@ -17,4 +17,5 @@ export type DateCellItem = {
   date: number;
   month: number;
   year: number;
+  type: 'prev' | 'current' | 'next';
 };

@@ -18,12 +18,42 @@
   border-right: 1px solid lightgrey;
   border-bottom: 1px solid lightgrey;
 
-  padding: 8px;
+  padding: 4px;
 
   display: flex;
   justify-content: flex-end;
+  align-items: self-start;
+  cursor: pointer;
 }
 
 .CalendarPanelItem--current {
-  color: red;
+  color: blue;
+}
+
+.CalendarPanelItem__date {
+  border-radius: 50%;
+  width: 30px;
+  padding: 4px;
+  text-align: center;
+  border: 1px solid transparent;
+}
+
+.CalendarPanelItem:hover {
+  .CalendarPanelItem__date {
+    border: 1px solid lightblue;
+  }
+}
+
+.CalendarPanelItem--selected .CalendarPanelItem__date {
+  background-color: blue;
+  color: white;
+}
+
+.CalendarPanelItem--today .CalendarPanelItem__date {
+  /* display: inline; */
+  border: 1px solid blue;
+}
+
+.CalendarPanelItem--not-current .CalendarPanelItem__date {
+  opacity: 0.5;
 }
