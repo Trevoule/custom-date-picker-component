@@ -16,6 +16,7 @@ import {
 } from './utils';
 import DatePickerPopupContent from './DatePickerPopupContent';
 import { useLatest } from '../../hooks/useLatest';
+import { DATA_TEST_IDS } from './constants';
 
 export const DatePicker = ({ value, onChange, min, max }: DatePickerProps) => {
   const [inputValue, setInputValue] = useState('');
@@ -108,10 +109,15 @@ export const DatePicker = ({ value, onChange, min, max }: DatePickerProps) => {
   }, [updateWithValidDate]);
 
   return (
-    <div ref={elementRef} className="DatePicker">
+    <div
+      ref={elementRef}
+      className="DatePicker"
+      data-testid={DATA_TEST_IDS.DATEPICKER_VIEW}
+    >
       <div className="DatePicker--control">
         <label htmlFor="date"></label>
         <input
+          data-testid={DATA_TEST_IDS.DATEPICKER_INPUT}
           id="date"
           type="text"
           onClick={onInputClick}
@@ -125,7 +131,10 @@ export const DatePicker = ({ value, onChange, min, max }: DatePickerProps) => {
         <p className={clsx(!isValidInputValue && 'invalid')}>*Invalid input</p>
       )}
       {showPopup && (
-        <div className="CalendarPanel--modal">
+        <div
+          className="CalendarPanel--modal"
+          data-testid={DATA_TEST_IDS.DATEPICKER_POPUP}
+        >
           <DatePickerPopupContent
             selectedValue={value}
             onChange={handleChange}
