@@ -176,11 +176,11 @@ export function isBiggerThanDate(date: Date, checkDate: Date) {
     return false;
   }
 
-  if (date.getMonth() <= checkDate.getMonth()) {
-    return false;
-  }
-
-  if (date.getDate() < checkDate.getDate()) {
+  if (
+    (date.getMonth() === checkDate.getMonth() &&
+      date.getDate() < checkDate.getDate()) ||
+    date.getMonth() < checkDate.getMonth()
+  ) {
     return false;
   }
 

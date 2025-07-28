@@ -79,7 +79,7 @@ const DatePickerPopupContent = ({
     const year = panelYear;
 
     const [nextMonth, nextYear] =
-      month === 0 ? [0, year + 1] : [month + 1, year];
+      month === 11 ? [0, year + 1] : [month + 1, year];
 
     setPanelYear(nextYear);
     setPanelMonth(nextMonth);
