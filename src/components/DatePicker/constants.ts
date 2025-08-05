@@ -1,6 +1,8 @@
 export const DATA_TEST_IDS = {
   DATEPICKER_VIEW: 'datepicker-view',
   DATEPICKER_INPUT: 'datepicker-input',
+  DATEPICKER_MIN_INPUT: 'datepicker-min-input',
+  DATEPICKER_MAX_INPUT: 'datepicker-max-input',
   DATEPICKER_POPUP: 'datepicker-popup',
 
   DATEPICKER_POPUP_CELL: 'datepicker-popup-cell',

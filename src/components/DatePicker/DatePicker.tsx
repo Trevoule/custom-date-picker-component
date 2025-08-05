@@ -1,12 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import clsx from 'clsx';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 import type { DatePickerProps } from '../types';
 import {
@@ -17,23 +9,31 @@ import {
 import DatePickerPopupContent from './DatePickerPopupContent';
 import { useLatest } from '../../hooks/useLatest';
 import { DATA_TEST_IDS } from './constants';
+import { useOutsideClick } from '../../hooks/useOutsideClick';
+import DateInputControl from './DateInputControl';
+import { useDateInput } from './hooks/useDateInput';
 
-export const DatePicker = ({ value, onChange, min, max }: DatePickerProps) => {
-  const [inputValue, setInputValue] = useState('');
+export const DatePicker = ({
+  value,
+  min,
+  max,
+  onChange,
+  onChangeMin,
+  onChangeMax,
+}: DatePickerProps) => {
+  const selectedDateInput = useDateInput(value);
+  const minDateInput = useDateInput(min, onChangeMin);
+  const maxDateInput = useDateInput(max, onChangeMax);
+
+  const latestInputValue = useLatest(selectedDateInput.inputValue);
+  const latestValue = useLatest(value);
+
   const [showPopup, setShowPopup] = useState(false);
   const elementRef = useRef<HTMLDivElement>(null);
 
-  const latestInputValue = useLatest(inputValue);
-  const latestValue = useLatest(value);
-
-  const onInputClick = () => {
+  const onDatePickerInputClick = useCallback(() => {
     setShowPopup(true);
-  };
-
-  const onInputValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.trim();
-    setInputValue(value);
-  };
+  }, []);
 
   const handleChange = useCallback(
     (value: Date) => {
@@ -51,15 +51,17 @@ export const DatePicker = ({ value, onChange, min, max }: DatePickerProps) => {
       if (isDateInRange) {
         handleChange(validDate);
       } else {
-        setInputValue(getInputValueFromDate(latestValidDate));
+        selectedDateInput.handleInputValue(
+          getInputValueFromDate(latestValidDate)
+        );
       }
       setShowPopup(false);
     },
-    [min, max, handleChange]
+    [min, max, handleChange, selectedDateInput]
   );
 
   const [inputValueDate, isValidInputValue] = useMemo(() => {
-    const date = getDateFromInputValue(inputValue);
+    const date = getDateFromInputValue(selectedDateInput.inputValue);
 
     if (!date) {
       return [undefined, false];
@@ -68,45 +70,30 @@ export const DatePicker = ({ value, onChange, min, max }: DatePickerProps) => {
     const isDateInRange = isInRange(date, min, max);
 
     return [date, isDateInRange];
-  }, [max, min, inputValue]);
+  }, [max, min, selectedDateInput]);
 
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key !== 'Enter') return;
-    updateWithValidDate(inputValue, value);
-  };
+  const handleMainDateKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key !== 'Enter') return;
+      updateWithValidDate(selectedDateInput.inputValue, value);
+    },
+    [selectedDateInput.inputValue, value, updateWithValidDate]
+  );
 
-  useLayoutEffect(() => {
-    setInputValue(getInputValueFromDate(value));
-  }, [value]);
-
-  // handling outside click
-  useEffect(() => {
-    const element = elementRef.current;
-
-    if (!element) return;
-
-    const onDocumentClick = (e: MouseEvent) => {
-      const target = e.target;
-
-      if (!(target instanceof Node)) {
-        return;
-      }
-
-      if (element.contains(target)) {
-        return;
-      }
-
-      // using latest value ref instead of value to not recreate the event listener on every value change
+  useOutsideClick({
+    element: elementRef.current,
+    handleOutsideClick: () => {
       updateWithValidDate(latestInputValue.current, latestValue.current);
-    };
 
-    document.addEventListener('click', onDocumentClick);
+      if (min) {
+        minDateInput.handleKeyDown();
+      }
 
-    return () => {
-      document.removeEventListener('click', onDocumentClick);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [updateWithValidDate]);
+      if (max) {
+        maxDateInput.handleKeyDown();
+      }
+    },
+  });
 
   return (
     <div
@@ -114,22 +101,38 @@ export const DatePicker = ({ value, onChange, min, max }: DatePickerProps) => {
       className="DatePicker"
       data-testid={DATA_TEST_IDS.DATEPICKER_VIEW}
     >
-      <div className="DatePicker--control">
-        <label htmlFor="date"></label>
-        <input
-          data-testid={DATA_TEST_IDS.DATEPICKER_INPUT}
+      <div className="DatePicker--controls">
+        {min && (
+          <DateInputControl
+            testId={DATA_TEST_IDS.DATEPICKER_MIN_INPUT}
+            id="min_date"
+            label="Min range:"
+            value={minDateInput.inputValue}
+            onChange={minDateInput.handleInputChange}
+            onKeyDown={minDateInput.handleKeyDown}
+          />
+        )}
+        {max && (
+          <DateInputControl
+            testId={DATA_TEST_IDS.DATEPICKER_MAX_INPUT}
+            id="max_date"
+            label="Max range:"
+            value={maxDateInput.inputValue}
+            onChange={maxDateInput.handleInputChange}
+            onKeyDown={maxDateInput.handleKeyDown}
+          />
+        )}
+        <DateInputControl
+          testId={DATA_TEST_IDS.DATEPICKER_INPUT}
           id="date"
-          type="text"
-          onClick={onInputClick}
-          value={inputValue}
-          onChange={onInputValueChange}
-          onKeyDown={onKeyDown}
-          className={clsx(!isValidInputValue && 'invalid')}
+          label="Date Picker (click to open)"
+          onClick={onDatePickerInputClick}
+          value={selectedDateInput.inputValue}
+          onChange={selectedDateInput.handleInputChange}
+          onKeyDown={handleMainDateKeyDown}
+          isValid={isValidInputValue}
         />
       </div>
-      {!isValidInputValue && (
-        <p className={clsx(!isValidInputValue && 'invalid')}>*Invalid input</p>
-      )}
       {showPopup && (
         <div
           className="CalendarPanel--modal"
