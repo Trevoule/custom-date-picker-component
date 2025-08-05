@@ -3,10 +3,7 @@ import './App.css';
 import { useState } from 'react';
 
 import DatePicker from './components/DatePicker';
-import {
-  changeDaysFromDate,
-  formatDateNumeric,
-} from './components/DatePicker/utils';
+import { changeDaysFromDate } from './components/DatePicker/utils';
 
 const TODAY = new Date();
 const MIN_DATE = new Date(changeDaysFromDate(TODAY, -10));
@@ -19,7 +16,6 @@ function App() {
 
   return (
     <div>
-      <p>Today: {formatDateNumeric(TODAY)}</p>
       <DatePicker
         value={date}
         onChange={setDate}

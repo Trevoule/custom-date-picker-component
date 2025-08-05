@@ -1,5 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import clsx from 'clsx';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 import type { DatePickerProps } from '../types';
 import {
@@ -11,6 +10,8 @@ import DatePickerPopupContent from './DatePickerPopupContent';
 import { useLatest } from '../../hooks/useLatest';
 import { DATA_TEST_IDS } from './constants';
 import { useOutsideClick } from '../../hooks/useOutsideClick';
+import DateInputControl from './DateInputControl';
+import { useDateInput } from './hooks/useDateInput';
 
 export const DatePicker = ({
   value,
@@ -20,27 +21,19 @@ export const DatePicker = ({
   onChangeMin,
   onChangeMax,
 }: DatePickerProps) => {
-  const [inputValue, setInputValue] = useState('');
-  const [inputMinValue, setInputMinValue] = useState('');
-  const [inputMaxValue, setInputMaxValue] = useState('');
+  const selectedDateInput = useDateInput(value);
+  const minDateInput = useDateInput(min, onChangeMin);
+  const maxDateInput = useDateInput(max, onChangeMax);
+
+  const latestInputValue = useLatest(selectedDateInput.inputValue);
+  const latestValue = useLatest(value);
 
   const [showPopup, setShowPopup] = useState(false);
   const elementRef = useRef<HTMLDivElement>(null);
 
-  const latestInputValue = useLatest(inputValue);
-  const latestValue = useLatest(value);
-
-  const onDatePickerInputClick = () => {
+  const onDatePickerInputClick = useCallback(() => {
     setShowPopup(true);
-  };
-
-  const onInputValueChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    setInput: (value: string) => void
-  ) => {
-    const value = e.target.value.trim();
-    setInput(value);
-  };
+  }, []);
 
   const handleChange = useCallback(
     (value: Date) => {
@@ -58,15 +51,17 @@ export const DatePicker = ({
       if (isDateInRange) {
         handleChange(validDate);
       } else {
-        setInputValue(getInputValueFromDate(latestValidDate));
+        selectedDateInput.handleInputValue(
+          getInputValueFromDate(latestValidDate)
+        );
       }
       setShowPopup(false);
     },
-    [min, max, handleChange]
+    [min, max, handleChange, selectedDateInput]
   );
 
   const [inputValueDate, isValidInputValue] = useMemo(() => {
-    const date = getDateFromInputValue(inputValue);
+    const date = getDateFromInputValue(selectedDateInput.inputValue);
 
     if (!date) {
       return [undefined, false];
@@ -75,57 +70,29 @@ export const DatePicker = ({
     const isDateInRange = isInRange(date, min, max);
 
     return [date, isDateInRange];
-  }, [max, min, inputValue]);
+  }, [max, min, selectedDateInput]);
 
-  const onKeyDownDate = (e: React.KeyboardEvent) => {
-    if (e.key !== 'Enter') return;
-    updateWithValidDate(inputValue, value);
-  };
-
-  const onKeyDownMin = (e: React.KeyboardEvent) => {
-    if (e.key !== 'Enter') return;
-    const validDate = getDateFromInputValue(inputMinValue);
-
-    if (validDate) {
-      onChangeMin?.(validDate);
-      return;
-    }
-
-    if (min) {
-      setInputMinValue(getInputValueFromDate(min));
-    }
-  };
-
-  const onKeyDownMax = (e: React.KeyboardEvent) => {
-    if (e.key !== 'Enter') return;
-    const validDate = getDateFromInputValue(inputMaxValue);
-
-    if (validDate) {
-      onChangeMax?.(validDate);
-      return;
-    }
-
-    if (max) {
-      setInputMaxValue(getInputValueFromDate(max));
-    }
-  };
-
-  useLayoutEffect(() => {
-    setInputValue(getInputValueFromDate(value));
-
-    if (min) {
-      setInputMinValue(getInputValueFromDate(min));
-    }
-
-    if (max) {
-      setInputMaxValue(getInputValueFromDate(max));
-    }
-  }, [value, min, max]);
+  const handleMainDateKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key !== 'Enter') return;
+      updateWithValidDate(selectedDateInput.inputValue, value);
+    },
+    [selectedDateInput.inputValue, value, updateWithValidDate]
+  );
 
   useOutsideClick({
     element: elementRef.current,
-    handleOutsideClick: () =>
-      updateWithValidDate(latestInputValue.current, latestValue.current),
+    handleOutsideClick: () => {
+      updateWithValidDate(latestInputValue.current, latestValue.current);
+
+      if (min) {
+        minDateInput.handleKeyDown();
+      }
+
+      if (max) {
+        maxDateInput.handleKeyDown();
+      }
+    },
   });
 
   return (
@@ -135,51 +102,36 @@ export const DatePicker = ({
       data-testid={DATA_TEST_IDS.DATEPICKER_VIEW}
     >
       <div className="DatePicker--controls">
-        {inputMinValue && (
-          <div className="DatePicker--control">
-            <label htmlFor="min_date">Min range:</label>
-            <input
-              id="min_date"
-              type="text"
-              value={inputMinValue}
-              onChange={(e) => onInputValueChange(e, setInputMinValue)}
-              onKeyDown={onKeyDownMin}
-            />
-          </div>
-        )}
-
-        {inputMaxValue && (
-          <div className="DatePicker--control">
-            <label htmlFor="max_date">Max range: </label>
-            <input
-              id="max_date"
-              type="text"
-              value={inputMaxValue}
-              onChange={(e) => onInputValueChange(e, setInputMaxValue)}
-              onKeyDown={onKeyDownMax}
-            />
-          </div>
-        )}
-        <div className="DatePicker--control">
-          <label htmlFor="date">
-            <strong>Date Picker (click to open)</strong>
-          </label>
-          <input
-            data-testid={DATA_TEST_IDS.DATEPICKER_INPUT}
-            id="date"
-            type="text"
-            onClick={onDatePickerInputClick}
-            value={inputValue}
-            onChange={(e) => onInputValueChange(e, setInputValue)}
-            onKeyDown={onKeyDownDate}
-            className={clsx(!isValidInputValue && 'invalid')}
+        {min && (
+          <DateInputControl
+            testId={DATA_TEST_IDS.DATEPICKER_MIN_INPUT}
+            id="min_date"
+            label="Min range:"
+            value={minDateInput.inputValue}
+            onChange={minDateInput.handleInputChange}
+            onKeyDown={minDateInput.handleKeyDown}
           />
-        </div>
-        {!isValidInputValue && (
-          <p className={clsx(!isValidInputValue && 'invalid')}>
-            *Invalid input
-          </p>
         )}
+        {max && (
+          <DateInputControl
+            testId={DATA_TEST_IDS.DATEPICKER_MAX_INPUT}
+            id="max_date"
+            label="Max range:"
+            value={maxDateInput.inputValue}
+            onChange={maxDateInput.handleInputChange}
+            onKeyDown={maxDateInput.handleKeyDown}
+          />
+        )}
+        <DateInputControl
+          testId={DATA_TEST_IDS.DATEPICKER_INPUT}
+          id="date"
+          label="Date Picker (click to open)"
+          onClick={onDatePickerInputClick}
+          value={selectedDateInput.inputValue}
+          onChange={selectedDateInput.handleInputChange}
+          onKeyDown={handleMainDateKeyDown}
+          isValid={isValidInputValue}
+        />
       </div>
       {showPopup && (
         <div
