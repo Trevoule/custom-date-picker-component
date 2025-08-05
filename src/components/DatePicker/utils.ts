@@ -211,6 +211,14 @@ export function formatDateNumeric(date: Date) {
   return date.toLocaleDateString('en-GB', {
     year: 'numeric',
     month: '2-digit',
-    day: 'numeric',
+    day: '2-digit',
   });
+}
+
+export function changeDaysFromDate(currentDate: Date, daysChange: number) {
+  const changedDate = new Date(currentDate);
+
+  changedDate.setDate(changedDate.getDate() + daysChange);
+
+  return changedDate;
 }
