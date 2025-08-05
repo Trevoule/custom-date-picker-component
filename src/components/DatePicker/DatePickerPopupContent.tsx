@@ -11,6 +11,7 @@ import {
   isInRange,
   isToday,
 } from './utils';
+import { DATA_TEST_IDS } from './constants';
 
 const DatePickerPopupContent = ({
   selectedValue,
@@ -95,15 +96,35 @@ const DatePickerPopupContent = ({
   return (
     <div className="CalendarPanel--container">
       <div className="CalendarPanel--controls">
-        <button onClick={prevYearHandler}>Prev Year</button>
-        <button onClick={prevMonthHandler}>Prev Month</button>
+        <button
+          onClick={prevYearHandler}
+          data-testid={DATA_TEST_IDS.DATEPICKER_PREV_YEAR_HANDLER}
+        >
+          Prev Year
+        </button>
+        <button
+          onClick={prevMonthHandler}
+          data-testid={DATA_TEST_IDS.DATEPICKER_PREV_MONTH_HANDLER}
+        >
+          Prev Month
+        </button>
 
-        <div>
+        <div data-testid={DATA_TEST_IDS.DATEPICKER_POPUP_MONTH}>
           {MONTHS[panelMonth]} {panelYear}
         </div>
 
-        <button onClick={nextMonthHandler}>Next Month</button>
-        <button onClick={nextYearHandler}>Next Year</button>
+        <button
+          onClick={nextMonthHandler}
+          data-testid={DATA_TEST_IDS.DATEPICKER_NEXT_MONTH_HANDLER}
+        >
+          Next Month
+        </button>
+        <button
+          onClick={nextYearHandler}
+          data-testid={DATA_TEST_IDS.DATEPICKER_NEXT_YEAR_HANDLER}
+        >
+          Next Year
+        </button>
       </div>
       <div className="CalendarPanel--content">
         {WEEKDAYS.map((weekday) => (
@@ -132,6 +153,7 @@ const DatePickerPopupContent = ({
                 isDateNotInRange && 'CalendarPanelItem--not-in-range'
               )}
               onClick={() => !isDateNotInRange && onDateSelect(cell)}
+              data-testid={DATA_TEST_IDS.DATEPICKER_POPUP_CELL}
             >
               <div className="CalendarPanelItem__date">{cell.date}</div>
             </div>
