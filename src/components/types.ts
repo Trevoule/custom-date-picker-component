@@ -2,7 +2,9 @@ export type DatePickerProps = {
   value: Date;
   onChange: (value: Date) => void;
   min?: Date;
+  onChangeMin?: (value: Date) => void;
   max?: Date;
+  onChangeMax?: (value: Date) => void;
 };
 
 export type DatePickerPopupContentProps = {

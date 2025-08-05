@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import clsx from 'clsx';
 
 import type { DatePickerProps } from '../types';
@@ -17,22 +10,36 @@ import {
 import DatePickerPopupContent from './DatePickerPopupContent';
 import { useLatest } from '../../hooks/useLatest';
 import { DATA_TEST_IDS } from './constants';
+import { useOutsideClick } from '../../hooks/useOutsideClick';
 
-export const DatePicker = ({ value, onChange, min, max }: DatePickerProps) => {
+export const DatePicker = ({
+  value,
+  min,
+  max,
+  onChange,
+  onChangeMin,
+  onChangeMax,
+}: DatePickerProps) => {
   const [inputValue, setInputValue] = useState('');
+  const [inputMinValue, setInputMinValue] = useState('');
+  const [inputMaxValue, setInputMaxValue] = useState('');
+
   const [showPopup, setShowPopup] = useState(false);
   const elementRef = useRef<HTMLDivElement>(null);
 
   const latestInputValue = useLatest(inputValue);
   const latestValue = useLatest(value);
 
-  const onInputClick = () => {
+  const onDatePickerInputClick = () => {
     setShowPopup(true);
   };
 
-  const onInputValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onInputValueChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setInput: (value: string) => void
+  ) => {
     const value = e.target.value.trim();
-    setInputValue(value);
+    setInput(value);
   };
 
   const handleChange = useCallback(
@@ -70,43 +77,56 @@ export const DatePicker = ({ value, onChange, min, max }: DatePickerProps) => {
     return [date, isDateInRange];
   }, [max, min, inputValue]);
 
-  const onKeyDown = (e: React.KeyboardEvent) => {
+  const onKeyDownDate = (e: React.KeyboardEvent) => {
     if (e.key !== 'Enter') return;
     updateWithValidDate(inputValue, value);
   };
 
+  const onKeyDownMin = (e: React.KeyboardEvent) => {
+    if (e.key !== 'Enter') return;
+    const validDate = getDateFromInputValue(inputMinValue);
+
+    if (validDate) {
+      onChangeMin?.(validDate);
+      return;
+    }
+
+    if (min) {
+      setInputMinValue(getInputValueFromDate(min));
+    }
+  };
+
+  const onKeyDownMax = (e: React.KeyboardEvent) => {
+    if (e.key !== 'Enter') return;
+    const validDate = getDateFromInputValue(inputMaxValue);
+
+    if (validDate) {
+      onChangeMax?.(validDate);
+      return;
+    }
+
+    if (max) {
+      setInputMaxValue(getInputValueFromDate(max));
+    }
+  };
+
   useLayoutEffect(() => {
     setInputValue(getInputValueFromDate(value));
-  }, [value]);
 
-  // handling outside click
-  useEffect(() => {
-    const element = elementRef.current;
+    if (min) {
+      setInputMinValue(getInputValueFromDate(min));
+    }
 
-    if (!element) return;
+    if (max) {
+      setInputMaxValue(getInputValueFromDate(max));
+    }
+  }, [value, min, max]);
 
-    const onDocumentClick = (e: MouseEvent) => {
-      const target = e.target;
-
-      if (!(target instanceof Node)) {
-        return;
-      }
-
-      if (element.contains(target)) {
-        return;
-      }
-
-      // using latest value ref instead of value to not recreate the event listener on every value change
-      updateWithValidDate(latestInputValue.current, latestValue.current);
-    };
-
-    document.addEventListener('click', onDocumentClick);
-
-    return () => {
-      document.removeEventListener('click', onDocumentClick);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [updateWithValidDate]);
+  useOutsideClick({
+    element: elementRef.current,
+    handleOutsideClick: () =>
+      updateWithValidDate(latestInputValue.current, latestValue.current),
+  });
 
   return (
     <div
@@ -114,22 +134,53 @@ export const DatePicker = ({ value, onChange, min, max }: DatePickerProps) => {
       className="DatePicker"
       data-testid={DATA_TEST_IDS.DATEPICKER_VIEW}
     >
-      <div className="DatePicker--control">
-        <label htmlFor="date"></label>
-        <input
-          data-testid={DATA_TEST_IDS.DATEPICKER_INPUT}
-          id="date"
-          type="text"
-          onClick={onInputClick}
-          value={inputValue}
-          onChange={onInputValueChange}
-          onKeyDown={onKeyDown}
-          className={clsx(!isValidInputValue && 'invalid')}
-        />
+      <div className="DatePicker--controls">
+        {inputMinValue && (
+          <div className="DatePicker--control">
+            <label htmlFor="min_date">Min range:</label>
+            <input
+              id="min_date"
+              type="text"
+              value={inputMinValue}
+              onChange={(e) => onInputValueChange(e, setInputMinValue)}
+              onKeyDown={onKeyDownMin}
+            />
+          </div>
+        )}
+
+        {inputMaxValue && (
+          <div className="DatePicker--control">
+            <label htmlFor="max_date">Max range: </label>
+            <input
+              id="max_date"
+              type="text"
+              value={inputMaxValue}
+              onChange={(e) => onInputValueChange(e, setInputMaxValue)}
+              onKeyDown={onKeyDownMax}
+            />
+          </div>
+        )}
+        <div className="DatePicker--control">
+          <label htmlFor="date">
+            <strong>Date Picker (click to open)</strong>
+          </label>
+          <input
+            data-testid={DATA_TEST_IDS.DATEPICKER_INPUT}
+            id="date"
+            type="text"
+            onClick={onDatePickerInputClick}
+            value={inputValue}
+            onChange={(e) => onInputValueChange(e, setInputValue)}
+            onKeyDown={onKeyDownDate}
+            className={clsx(!isValidInputValue && 'invalid')}
+          />
+        </div>
+        {!isValidInputValue && (
+          <p className={clsx(!isValidInputValue && 'invalid')}>
+            *Invalid input
+          </p>
+        )}
       </div>
-      {!isValidInputValue && (
-        <p className={clsx(!isValidInputValue && 'invalid')}>*Invalid input</p>
-      )}
       {showPopup && (
         <div
           className="CalendarPanel--modal"
